@@ -1,17 +1,24 @@
 #include "stdafx.h"
 
-   Ogre::SceneNode* nM03;
-
 class FrameListenerProyectos : public Ogre::FrameListener
 {
 
 private:
-	
+
 	Ogre::SceneNode* nodoF01;
+	Ogre::SceneNode* nodoF02;
 	OIS::InputManager* _man;
 	OIS::Keyboard* _key;
 	OIS::Mouse* _mouse;
 	Ogre::Camera* _cam;
+
+	//Animacion
+	Ogre::Entity* _ent;
+	Ogre::AnimationState* _aniState;
+	Ogre::AnimationState* _aniStateTop;
+
+	float _WalkingSpeed;
+	float _rotation;
 
 public: 
 
@@ -34,6 +41,8 @@ public:
 		
 		_cam = Cam;
 		nodoF01 = nodo01;
+
+		std::cout << "Entro a crear el framelistener" << std::endl;
 	}
 
 	~FrameListenerProyectos(){
@@ -42,59 +51,36 @@ public:
 		OIS::InputManager::destroyInputSystem(_man);
 	}
 
-	bool frameStarted(const Ogre::FrameEvent& evt) 
-	{
-
+	bool frameStarted(const Ogre::FrameEvent& evt) {
 		_key->capture();
 		_mouse->capture();
 		
-		float movSpeed = 100.0f;
+		float movSpeed = 500.0f;
 
-		Ogre::Vector3 t(0,0,0);
 
 		if (_key->isKeyDown(OIS::KC_ESCAPE))
 			return false;
 
-		if (_key->isKeyDown(OIS::KC_T))
-			t += Ogre::Vector3(0,0,-10);
-
-		if (_key->isKeyDown(OIS::KC_G))
-			t += Ogre::Vector3(0,0,10);
-
-		if (_key->isKeyDown(OIS::KC_F))
-			t += Ogre::Vector3(-10,0,0);
-
-		if (_key->isKeyDown(OIS::KC_H))
-			t += Ogre::Vector3(10,0,0);
-
-		Ogre::Vector3 tNave(0,0,0);
+		Ogre::Vector3 t(0,0,0);
 
 		if (_key->isKeyDown(OIS::KC_W))
-			tNave += Ogre::Vector3(0,0,-10);
+			t += Ogre::Vector3(0,0,-10);
 
 		if (_key->isKeyDown(OIS::KC_S))
-			tNave += Ogre::Vector3(0,0,10);
+			t += Ogre::Vector3(0,0,10);
 
 		if (_key->isKeyDown(OIS::KC_A))
-			tNave += Ogre::Vector3(-10,0,0);
+			t += Ogre::Vector3(-10,0,0);
 
 		if (_key->isKeyDown(OIS::KC_D))
-			tNave += Ogre::Vector3(10,0,0);
-		
-		if (_key->isKeyDown(OIS::KC_UP))
-			tNave += Ogre::Vector3(0,10,0);
+			t += Ogre::Vector3(10,0,0);
 
-		if (_key->isKeyDown(OIS::KC_DOWN))
-			tNave += Ogre::Vector3(0,-10,0);
-
-		nodoF01->translate(tNave * evt.timeSinceLastFrame * movSpeed);
-
-		float rotX = _mouse->getMouseState().X.rel * evt.timeSinceLastFrame * -1;
+		_cam->moveRelative(t*evt.timeSinceLastFrame*movSpeed);
+		float rotX = _mouse->getMouseState().X.rel * evt.timeSinceLastFrame* -1;
 		float rotY = _mouse->getMouseState().Y.rel * evt.timeSinceLastFrame * -1;
 		_cam->yaw(Ogre::Radian(rotX));
 		_cam->pitch(Ogre::Radian(rotY));
-		_cam->moveRelative(t*evt.timeSinceLastFrame*movSpeed);
-
+		
 		return true;
 	}
 
@@ -110,6 +96,9 @@ class OgreProyectos {
 private:
 	Ogre::SceneManager* _sceneManager;
 	Ogre::Root* _root;
+	Ogre::Camera* camera;
+	Ogre::SceneNode* nM03;
+	Ogre::RenderWindow* window;
 	FrameListenerProyectos* _listener;
 
 public:
@@ -154,11 +143,11 @@ public:
 				return -1;
 			}
 
-			Ogre::RenderWindow* window = _root->initialise(true,"Ventana Ogre");
+			window = _root->initialise(true,"Ventana Ogre");
 
 			_sceneManager = _root->createSceneManager(Ogre::ST_GENERIC);
 
-			Ogre::Camera* camera = _sceneManager->createCamera("Camera");
+			camera = _sceneManager->createCamera("Camera");
 			camera->setPosition(Ogre::Vector3(500,100,500));
 			camera->lookAt(Ogre::Vector3(0,0,0));
 			camera->setNearClipDistance(5);
@@ -167,7 +156,7 @@ public:
 			viewport->setBackgroundColour(Ogre::ColourValue(0.0,0.0,0.0));
 			camera->setAspectRatio(Ogre::Real(viewport->getActualWidth()/viewport->getActualHeight()));
 
-		nM03 = _sceneManager->createSceneNode("nM03");
+			nM03 = _sceneManager->createSceneNode("nM03");
 
 			_listener = new FrameListenerProyectos(nM03,window,camera);
 			_root->addFrameListener(_listener);
@@ -181,9 +170,15 @@ public:
 
 	void createScene() {
 	
+		_sceneManager->setSkyBox(true, "SkyBox");
 		_sceneManager->setAmbientLight(Ogre::ColourValue(1.0f,1.0f,1.0f));
-
-		//Luz
+		Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0.0);
+		Ogre::MeshManager::getSingleton().createPlane("plane", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, plane, 20000, 90000, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Z);
+		Ogre::Entity* entPlano = _sceneManager->createEntity("PlanoEntity", "plane");
+		_sceneManager->getRootSceneNode()->createChildSceneNode()->attachObject(entPlano);
+		 entPlano->setMaterialName("mat01");
+		
+		 //Luz
 		float lightScale = 0.9f;
 		Ogre::Light* light02;
 		//Ogre::SceneNode* nodeLuz02 = mSceneMgr->createSceneNode("NodeLuz02");	
@@ -195,18 +190,20 @@ public:
 		//Probando LUX
 		//node3->attachObject(LightEnt);
 
-		Ogre::SceneNode* nM01 = _sceneManager->createSceneNode("nM01");
+
+		//EJEMPLO DE COMO PONER MATERIALS
+		/*Ogre::SceneNode* nM01 = _sceneManager->createSceneNode("nM01");
 		Ogre::Entity* entM01 = _sceneManager->createEntity("EntM01","proyectoOgreI.mesh");
 		_sceneManager->getRootSceneNode()->addChild(nM01);
 		nM01->attachObject(entM01);
 		entM01->setMaterialName("mat01");
 
 		Ogre::SceneNode* nM02 = _sceneManager->createSceneNode("nM02");
-		Ogre::Entity* entM02 = _sceneManager->createEntity("EntM02","ejes01.mesh");
+		Ogre::Entity* entM02 = _sceneManager->createEntity("EntM02","penguin.mesh");
 		_sceneManager->getRootSceneNode()->addChild(nM02);
 		nM02->attachObject(entM02);
 		nM02->scale(10.0f,10.0f,10.0f);
-
+*/
 		
 		/*Ogre::Entity* entM03 = _sceneManager->createEntity("EntM03","poly01.mesh");
 		_sceneManager->getRootSceneNode()->addChild(nM03);

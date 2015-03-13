@@ -1,5 +1,85 @@
 #include "stdafx.h"
-	Ogre::SceneNode* nave, *camera_node;
+Ogre::SceneNode* nave, *camera_node;
+Ogre::SceneNode* rocks[3];
+
+
+//Ogros de roca, movimiento
+class FrameListenerRock : public Ogre::FrameListener {
+private:
+	OIS::InputManager* _man;
+	OIS::Keyboard* _key;
+	float grados;
+public:
+	FrameListenerRock(Ogre::RenderWindow* win) {
+		size_t windowHnd = 0;
+		std::stringstream windowsHndStr;
+		win->getCustomAttribute("WINDOW", &windowHnd);
+		windowsHndStr << windowHnd;
+		OIS::ParamList pl;
+		pl.insert(std::make_pair(std::string("WINDOW"), windowsHndStr.str()));
+		_man = OIS::InputManager::createInputSystem(pl);
+		_key = static_cast<OIS::Keyboard*>(_man->createInputObject(OIS::OISKeyboard,false));
+		grados = 0.0f;
+	}
+
+	~FrameListenerRock() {
+		_man->destroyInputObject(_key);
+		OIS::InputManager::destroyInputSystem(_man);
+	}
+
+	bool frameStarted(const Ogre::FrameEvent &evt){
+		float movSpeed = 2500.0f;
+		_key->capture();
+		
+		if (_key->isKeyDown(OIS::KC_ESCAPE))
+			return false;
+
+		Ogre::Vector3 t (0,0,0);
+		Ogre::Quaternion q (Ogre::Degree(0), Ogre::Vector3::ZERO);
+
+		/*if (_key->isKeyDown(OIS::KC_W))
+			t += Ogre::Vector3(0,0,-movSpeed);
+
+		if (_key->isKeyDown(OIS::KC_S))
+			t += Ogre::Vector3(0,0,+movSpeed);*/
+		Ogre::Vector3 navePos = camera_node->getPosition();
+		for(int i=0;i<3;i++){
+			Ogre::Vector3 ogrePos = rocks[i]->getPosition();
+			//std::cout << "Posogro: " << ogrePos << " PosNave: "<< navePos <<std::endl;
+			if(navePos.z <= (ogrePos.z+10000) && navePos.z >= (ogrePos.z-10000)){
+				Ogre::Node* rightArm = rocks[i]->getChild("rightArm"+i);
+				Ogre::Quaternion Quat = rightArm->getOrientation();
+				Ogre::Degree DegY; 
+				Quat.ToAngleAxis( DegY, Ogre::Vector3(0,1,0) );
+				if(DegY > Ogre::Degree(0)){
+					rightArm->rotate(Ogre::Quaternion(Ogre::Degree(15 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_Y));
+				}
+
+				Ogre::Node* leftArm = rocks[i]->getChild("leftArm"+i);
+				Quat = leftArm->getOrientation();
+				Quat.ToAngleAxis( DegY, Ogre::Vector3(0,1,0) );
+				if(DegY > Ogre::Degree(0)) {
+					leftArm->rotate(Ogre::Quaternion(Ogre::Degree(-15 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_Y));
+				}
+
+				Ogre::Node* leftLeg = rocks[i]->getChild("leftLeg"+i);
+				Quat = leftLeg->getOrientation();
+				Quat.ToAngleAxis( DegY, Ogre::Vector3(1,0,0) );
+				if(DegY > Ogre::Degree(0)) {
+					leftLeg->rotate(Ogre::Quaternion(Ogre::Degree(15 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_X));
+				}
+
+				Ogre::Node* rightLeg = rocks[i]->getChild("rightLeg"+i);
+				Quat = rightLeg->getOrientation();
+				Quat.ToAngleAxis( DegY, Ogre::Vector3(1,0,0) );
+				if(DegY > Ogre::Degree(0)) {
+					rightLeg->rotate(Ogre::Quaternion(Ogre::Degree(15 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_X));
+				}
+			}
+		}
+		return true;
+	}
+};
 
 class FrameListenerNave : public Ogre::FrameListener {
 
@@ -52,7 +132,7 @@ public:
 				if (grados > -45)
 				{
 					grados -= 90 * evt.timeSinceLastFrame;
-					q = q * Ogre::Quaternion(Ogre::Degree(-90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_X);
+					q = q * Ogre::Quaternion(Ogre::Degree(-90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_Y);
 				}
 			}
 			if (_key->isKeyDown(OIS::KC_D)){
@@ -60,7 +140,7 @@ public:
 				if (grados < 45)
 				{
 					grados += 90 * evt.timeSinceLastFrame;
-					q = q * Ogre::Quaternion(Ogre::Degree(90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_X);
+					q = q * Ogre::Quaternion(Ogre::Degree(90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_Y);
 				}
 			}
 		} else
@@ -68,10 +148,10 @@ public:
 			if (grados > 0.1f)
 			{
 				grados -= 90 * evt.timeSinceLastFrame;
-				q = q * Ogre::Quaternion(Ogre::Degree(-90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_X);
+				q = q * Ogre::Quaternion(Ogre::Degree(-90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_Y);
 			} else if (grados < -0.001f){
 				grados += 90 * evt.timeSinceLastFrame;
-				q = q * Ogre::Quaternion(Ogre::Degree(90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_X);
+				q = q * Ogre::Quaternion(Ogre::Degree(90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_Y);
 			}
 		}
 		if (_key->isKeyDown(OIS::KC_UP))
@@ -206,6 +286,7 @@ public:
 	Ogre::SceneNode* nM03;
 	Ogre::RenderWindow* window;
 	FrameListenerNave* FrameListenerNave01;
+	FrameListenerRock* FrameListenerRock01;
 	
 	OgreProyectos(){
 		_sceneManager = NULL;
@@ -221,7 +302,7 @@ public:
 
 	void createCamera() {
 		camera = _sceneManager->createCamera("Camera");
-		camera->setPosition(0,150,900);
+		camera->setPosition(0,350,900);
 		camera->lookAt(Ogre::Vector3(0,0,0));
 		camera->setNearClipDistance(5);
 	}
@@ -229,6 +310,9 @@ public:
 	void createFrameListeners() {
 		FrameListenerNave01 = new FrameListenerNave(nave, window, camera_node);
 		_root->addFrameListener(FrameListenerNave01);
+
+		FrameListenerRock01 = new FrameListenerRock(window);
+		_root->addFrameListener(FrameListenerRock01);
 	}
 
 	void loadResources() {
@@ -282,7 +366,9 @@ public:
 	void createScene() {
 	
 		//_sceneManager->setSkyBox(true, "SkyBox");
+		_sceneManager->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_ADDITIVE);
 		_sceneManager->setAmbientLight(Ogre::ColourValue(1.0f,1.0f,1.0f));
+
 		Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0.0);
 		Ogre::MeshManager::getSingleton().createPlane("plane", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, plane, 20000, 90000, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Z);
 		Ogre::Entity* entPlano = _sceneManager->createEntity("PlanoEntity", "plane");
@@ -297,20 +383,148 @@ public:
 
 		//Creando nave
 		nave = camera_node->createChildSceneNode("Nave");
-		Ogre::Entity* naveMesh = _sceneManager->createEntity("nav","poly05.mesh");
-		naveMesh->setMaterialName("mat02");
-		nave->attachObject(naveMesh);
+		Ogre::SceneNode* parteIzq = nave -> createChildSceneNode("PartIzq");
+		Ogre::Entity* naveMesh_izq = _sceneManager->createEntity("nav_izquierda","poly10.mesh");
+		naveMesh_izq->setMaterialName("mat02");
+		parteIzq->scale(1.0,1.0,0.5);
+		parteIzq->translate(-190.0f,0.0f,0.0f);
+		parteIzq->rotate(Ogre::Quaternion(Ogre::Degree(20), Ogre::Vector3::UNIT_Z));
+		parteIzq->attachObject(naveMesh_izq);
+
+		Ogre::SceneNode* parteTriIzq = nave -> createChildSceneNode("PartTriIzq");
+		Ogre::Entity* naveMesh_triIzq = _sceneManager->createEntity("nav_triIzq","usb_prisma.mesh");
+		naveMesh_triIzq->setMaterialName("mat02");
+		parteTriIzq->scale(25.0,50.0,10.0);
+		parteTriIzq->translate(-105.0f,375.0f,0.0f);
+		parteTriIzq->rotate(Ogre::Quaternion(Ogre::Degree(-180), Ogre::Vector3::UNIT_Y));
+		parteTriIzq->attachObject(naveMesh_triIzq);
+
+		Ogre::SceneNode* parteDer = nave -> createChildSceneNode("PartDer");
+		Ogre::Entity* naveMesh_der = _sceneManager->createEntity("nav_derecha","poly10.mesh");
+		naveMesh_der->setMaterialName("mat02");
+		parteDer->scale(1.0,1.0,0.5);
+		parteDer->translate(170.0f,0.0f,0.0f);
+		parteDer->rotate(Ogre::Quaternion(Ogre::Degree(-200), Ogre::Vector3::UNIT_Z));
+		parteDer->attachObject(naveMesh_der);
+
+		Ogre::SceneNode* parteTriDer = nave -> createChildSceneNode("PartTriDer");
+		Ogre::Entity* naveMesh_triDer= _sceneManager->createEntity("nav_triDer","usb_prisma.mesh");
+		naveMesh_triDer->setMaterialName("mat02");
+		parteTriDer->scale(25.0,50.0,10.0);
+		parteTriDer->translate(83.0f,375.0f,0.0f);
+		parteTriDer->attachObject(naveMesh_triDer);
+
+		Ogre::SceneNode* parteBall = nave -> createChildSceneNode("PartBall");
+		Ogre::Entity* naveMesh_ball = _sceneManager->createEntity("nav_ball","poly12.mesh");
+		naveMesh_ball->setMaterialName("ballTex");
+		parteBall->translate(0.0f,50.0f,0.0f);
+		parteBall->attachObject(naveMesh_ball);
+
+		//Poner la nave en la posicion que es
+		nave->rotate(Ogre::Quaternion(Ogre::Degree(-90), Ogre::Vector3::UNIT_X));
+		nave->scale(0.4f,0.4f,0.4f);
+		
+		//Generando ogro
+		for(int i= 0;i<3;i++){
+			rocks[i] = _sceneManager->getRootSceneNode()->createChildSceneNode("rock"+i);
+			//Ogre::SceneNode* bodyRock = rocks[0]->createChildSceneNode("head0");
+			Ogre::Entity* entBodyRock = _sceneManager->createEntity("rocBodykEnt"+i,"poly01.mesh");
+			entBodyRock->setMaterialName("rockMat");
+			rocks[i]->attachObject(entBodyRock);
+			if(i == 0)
+				rocks[i]->setPosition(0,5000,20000);
+			else if(i == 1)
+				rocks[i]->setPosition(5000,6000,15000);
+			else
+				rocks[i]->setPosition(-5000, 5000, 10000);
+			rocks[i]->scale(30.0,50.0,20.0);
+
+			Ogre::SceneNode* head = rocks[i]->createChildSceneNode("head"+i);
+			Ogre::Entity* entBodyRockHead = _sceneManager->createEntity("rocBodykEntHead"+i,"poly01.mesh");
+			entBodyRockHead->setMaterialName("extremMat");
+			head->attachObject(entBodyRockHead);
+			head->setPosition(0,60,0);
+			head->scale(0.6,0.4,0.6);
+
+			//Pierna izquierda
+			Ogre::SceneNode* leftLeg = rocks[i]->createChildSceneNode("leftLeg"+i);
+			Ogre::Entity* entLeftLeg = _sceneManager->createEntity("ballLegLeft"+i,"poly18.mesh");
+			entLeftLeg->setMaterialName("rockMat");
+			leftLeg->attachObject(entLeftLeg);
+			leftLeg->translate(-40.0f,-65.0f,0.0f);
+			leftLeg->scale(0.25,0.2,0.3);
+			leftLeg->rotate(Ogre::Quaternion(Ogre::Degree(-90), Ogre::Vector3::UNIT_X));
+
+			Ogre::SceneNode* leftLeg2 = leftLeg->createChildSceneNode("leftLeg2"+i);
+			Ogre::Entity* entleftLeg2 = _sceneManager->createEntity("entleftLeg2"+i,"poly01.mesh");
+			entleftLeg2->setMaterialName("extremMat");
+			leftLeg2->attachObject(entleftLeg2);
+			leftLeg2->translate(-35.0f,-95.0f,0.0f);
+			leftLeg2->scale(1.8,2.0,1.0);
+
+
+
+			//Pierna derecha
+			Ogre::SceneNode* rightLeg = rocks[i]->createChildSceneNode("rightLeg"+i);
+			Ogre::Entity* entRightLeg = _sceneManager->createEntity("ballRightLeft"+i,"poly18.mesh");
+			entRightLeg->setMaterialName("rockMat");
+			rightLeg->attachObject(entRightLeg);
+			rightLeg->translate(40.0f,-65.0f,0.0f);
+			rightLeg->scale(0.25,0.2,0.3);
+			rightLeg->rotate(Ogre::Quaternion(Ogre::Degree(-90), Ogre::Vector3::UNIT_X));
+
+			Ogre::SceneNode* rightLeg2 = rightLeg->createChildSceneNode("rightLeg2"+i);
+			Ogre::Entity* entRightLeg2 = _sceneManager->createEntity("entRightLeg2"+i,"poly01.mesh");
+			entRightLeg2->setMaterialName("extremMat");
+			rightLeg2->attachObject(entRightLeg2);
+			rightLeg2->translate(35.0f,-95.0f,0.0f);
+			rightLeg2->scale(1.8,2.0,1.0);
+
+			//Brazo derecho
+			Ogre::SceneNode* rightArm = rocks[i]->createChildSceneNode("rightArm"+i);
+			Ogre::Entity* entRightArm = _sceneManager->createEntity("ballRightArm"+i,"poly18.mesh");
+			entRightArm->setMaterialName("rockMat");
+			rightArm->attachObject(entRightArm);
+			rightArm->translate(67.0f,30.0f,0.0f);
+			rightArm->scale(0.25,0.2,0.3);
+			rightArm->rotate(Ogre::Quaternion(Ogre::Degree(-90), Ogre::Vector3::UNIT_Y));
+
+			Ogre::SceneNode* rightArm2 = rightArm->createChildSceneNode("rightArm2"+i);
+			Ogre::Entity* entRightArm2 = _sceneManager->createEntity("entRightArm2"+i,"poly01.mesh");
+			entRightArm2->setMaterialName("extremMat");
+			rightArm2->attachObject(entRightArm2);
+			rightArm2->translate(95.0f,30.0f,0.0f);
+			rightArm2->scale(2.5,1.7,1.0);
+
+			//Brazo izquierdo
+			Ogre::SceneNode* leftArm = rocks[i]->createChildSceneNode("leftArm"+i);
+			Ogre::Entity* entLeftArm = _sceneManager->createEntity("ballLeftArm"+i,"poly18.mesh");
+			entLeftArm->setMaterialName("rockMat");
+			leftArm->attachObject(entLeftArm);
+			leftArm->translate(-63.0f,30.0f,0.0f);
+			leftArm->scale(0.25,0.2,0.3);
+			leftArm->rotate(Ogre::Quaternion(Ogre::Degree(90), Ogre::Vector3::UNIT_Y));
+
+			Ogre::SceneNode* leftArm2 = leftArm->createChildSceneNode("lefttArm2"+i);
+			Ogre::Entity* entLeftArm2 = _sceneManager->createEntity("entLeftArm2"+i,"poly01.mesh");
+			entLeftArm2->setMaterialName("extremMat");
+			leftArm2->attachObject(entLeftArm2);
+			leftArm2->translate(-145.0f,30.0f,0.0f);
+			leftArm2->scale(2.5,1.7,1.0);
+		}
+
+
+		/*Ogre::Entity* naveMesh_der = _sceneManager->createEntity("nav_derecha","poly10.mesh");
+		naveMesh_der->setMaterialName("mat02");
+		nave->attachObject(naveMesh_der);*/
+
 		 //Luz
-		//float lightScale = 0.9f;
-		//Ogre::Light* light02;
-		//Ogre::SceneNode* nodeLuz02 = mSceneMgr->createSceneNode("NodeLuz02");	
-		//Ogre::Entity* LightEnt = mSceneMgr->createEntity("MyEntity","sphere.mesh");
-		//Ogre::SceneNode* node3 = nodeLuz02->createChildSceneNode("node3");
-		//node3->setScale(0.1f,0.1f,0.1f);
-		//node3->setPosition(0,20,0);
-		//_sceneManager->getRootSceneNode()->addChild(nodeLuz02);
-		//Probando LUX
-		//node3->attachObject(LightEnt);
+		Ogre::Light* light = _sceneManager->createLight("Light01");
+		light->setType(Ogre::Light::LT_POINT);
+		light->setPosition(0.0f, 460.0f, 90000.0f);
+		light->setDiffuseColour(0.0f, 1.0f, 1.0f);
+		light->setSpecularColour(0.0f, 1.0f, 1.0f);
+
 
 
 		//EJEMPLO DE COMO PONER MATERIALS

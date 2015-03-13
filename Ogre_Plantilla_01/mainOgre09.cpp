@@ -1,5 +1,8 @@
 #include "stdafx.h"
-	Ogre::SceneNode* nave, *camera_node;
+using namespace Ogre;
+
+Ogre::SceneNode* nave, *camera_node, **aros, **monedas;
+int score, vidas;
 
 class FrameListenerNave : public Ogre::FrameListener {
 
@@ -31,6 +34,9 @@ public:
 	}
 
 	bool frameStarted(const Ogre::FrameEvent &evt){
+		//
+		// INTERACCION CON TECLADO
+		//
 		float movSpeed = 2500.0f;
 		_key->capture();
 		
@@ -39,28 +45,29 @@ public:
 
 		Ogre::Vector3 t (0,0,0);
 		Ogre::Quaternion q (Ogre::Degree(0), Ogre::Vector3::ZERO);
+		Ogre::Quaternion qc (Degree(0), Vector3::ZERO);
 
 		if (_key->isKeyDown(OIS::KC_W))
-			t += Ogre::Vector3(0,0,-movSpeed);
+			t += Ogre::Vector3(0,0,movSpeed);
 
 		if (_key->isKeyDown(OIS::KC_S))
-			t += Ogre::Vector3(0,0,+movSpeed);
+			t += Ogre::Vector3(0,0,-movSpeed);
 
 		if(_key->isKeyDown(OIS::KC_D) || _key->isKeyDown(OIS::KC_A)){
-			if (_key->isKeyDown(OIS::KC_A)){
+			if (_key->isKeyDown(OIS::KC_D)){
 				t += Ogre::Vector3(-movSpeed,0,0);
 				if (grados > -45)
 				{
 					grados -= 90 * evt.timeSinceLastFrame;
-					q = q * Ogre::Quaternion(Ogre::Degree(-90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_X);
+					q = q * Ogre::Quaternion(Ogre::Degree(-90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_Z);
 				}
 			}
-			if (_key->isKeyDown(OIS::KC_D)){
+			if (_key->isKeyDown(OIS::KC_A)){
 				t += Ogre::Vector3(movSpeed,0,0);
 				if (grados < 45)
 				{
 					grados += 90 * evt.timeSinceLastFrame;
-					q = q * Ogre::Quaternion(Ogre::Degree(90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_X);
+					q = q * Ogre::Quaternion(Ogre::Degree(90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_Z);
 				}
 			}
 		} else
@@ -68,10 +75,10 @@ public:
 			if (grados > 0.1f)
 			{
 				grados -= 90 * evt.timeSinceLastFrame;
-				q = q * Ogre::Quaternion(Ogre::Degree(-90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_X);
+				q = q * Ogre::Quaternion(Ogre::Degree(-90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_Z);
 			} else if (grados < -0.001f){
 				grados += 90 * evt.timeSinceLastFrame;
-				q = q * Ogre::Quaternion(Ogre::Degree(90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_X);
+				q = q * Ogre::Quaternion(Ogre::Degree(90 * evt.timeSinceLastFrame), Ogre::Vector3::UNIT_Z);
 			}
 		}
 		if (_key->isKeyDown(OIS::KC_UP))
@@ -79,9 +86,15 @@ public:
 
 		if (_key->isKeyDown(OIS::KC_DOWN))
 			t += Ogre::Vector3(0,-movSpeed,0);
+		if (_key->isKeyDown(OIS::KC_LEFT))
+			qc = Quaternion(Degree(90 * evt.timeSinceLastFrame), Vector3::UNIT_Y);
+
+		if (_key->isKeyDown(OIS::KC_RIGHT))
+			qc = Quaternion(Degree(-90 * evt.timeSinceLastFrame), Vector3::UNIT_Y);
 
 		nave->rotate(q);
 		camera_node->translate(t * evt.timeSinceLastFrame, camera_node->TS_LOCAL);
+		camera_node->rotate(qc);
 		
 
 		// Limites del cuarto
@@ -98,14 +111,75 @@ public:
 
 		if (pos.y > 10000)
 			pos.y = 10000;
-		else if(pos.y < 10)
-			pos.y = 100;
+		else if(pos.y < 500)
+			pos.y = 500;
 
 		camera_node->setPosition(pos);
+
+		//
+		// COLISIONES
+		//
+		// Aros
+		for (int i = 0; i < sizeof(aros); i++)
+		{
+			if (aros[i] != NULL)
+			{
+				AxisAlignedBox aab = nave->_getWorldAABB().intersection(aros[i]->_getWorldAABB());
+				if(!aab.isNull())
+				{
+					score += 200;
+					std::cout << "Score:" << score << std::endl;
+					delete aros[i];
+					aros[i] = NULL;
+				}
+			}
+		}
+
+		// Monedas
+		for (int i = 0; i < sizeof(monedas); i++)
+		{
+			if (monedas[i] != NULL)
+			{
+				AxisAlignedBox aab = nave->_getWorldAABB().intersection(monedas[i]->_getWorldAABB());
+				if(!aab.isNull())
+				{
+					score += 100;
+					std::cout << "Score:" << score << std::endl;
+					delete monedas[i];
+					monedas[i] = NULL;
+				}
+			}
+		}
 		return true;
 	}
 };
 
+
+class FrameListenerMet : public Ogre::FrameListener {
+
+private:
+	SceneNode* met;
+
+public:
+	FrameListenerMet(Ogre::SceneNode* node){
+		met = node;
+	}
+
+	~FrameListenerMet(){
+	}
+
+	bool frameStarted(const Ogre::FrameEvent &evt){
+		//
+		// INTERACCION CON TECLADO
+		//
+		float movSpeed = 20.0f;
+		Vector3 t (0, -movSpeed, 0);
+		met->translate(t, met->TS_LOCAL);	
+		return true;
+	}
+};
+
+/*
 class FrameListenerProyectos : public Ogre::FrameListener
 {
 
@@ -196,6 +270,8 @@ public:
 	}
 
 };
+*/
+
 
 class OgreProyectos {
 
@@ -203,25 +279,33 @@ public:
 	Ogre::SceneManager* _sceneManager;
 	Ogre::Root* _root;
 	Ogre::Camera* camera;
-	Ogre::SceneNode* nM03;
+	Ogre::SceneNode* nM03, *met;
 	Ogre::RenderWindow* window;
 	FrameListenerNave* FrameListenerNave01;
-	
+	FrameListenerMet* FrameListenerMet01;
+
 	OgreProyectos(){
+		monedas = new SceneNode* [rand() % 5 + 3];
+		aros = new SceneNode* [rand() % 8 + 3];
 		_sceneManager = NULL;
 		_root = NULL;
 		FrameListenerNave01 = NULL;
+		score = 0;
+		vidas = 3;
 	}
 
 
 	~OgreProyectos(){ 
 		delete _root;
 		delete FrameListenerNave01;
+		delete FrameListenerMet01;
+		delete aros;
+		delete monedas;
 	}
 
 	void createCamera() {
 		camera = _sceneManager->createCamera("Camera");
-		camera->setPosition(0,150,900);
+		camera->setPosition(0,300,-2000);
 		camera->lookAt(Ogre::Vector3(0,0,0));
 		camera->setNearClipDistance(5);
 	}
@@ -279,20 +363,55 @@ public:
 			return 0;
 	}
 
+	//Función para crear una moneda
+	SceneNode* createCoin(int pos_x, int pos_y, int pos_z, int num){
+		Ogre::SceneNode* nodoMoneda = _sceneManager->createSceneNode("Moneda"+ std::to_string(num));
+		Ogre::Entity* entMoneda = _sceneManager->createEntity("moneda"+ std::to_string(num),"poly14.mesh");
+		entMoneda->setMaterialName("mat01");
+		nodoMoneda->attachObject(entMoneda);
+		nodoMoneda->setPosition(pos_x, pos_y, pos_z);
+		nodoMoneda->scale(0.7,1,1);
+		nodoMoneda->rotate(Quaternion(Degree(90), Vector3::UNIT_X));
+		_sceneManager->getRootSceneNode()->addChild(nodoMoneda);
+		return nodoMoneda;
+	}
+
+	//Función para crear un aro
+	SceneNode* createRing(int pos_x, int pos_y, int pos_z, int num){
+		Ogre::SceneNode* nodoAro = _sceneManager->createSceneNode("Aro"+std::to_string(num));
+		Ogre::Entity* entAro = _sceneManager->createEntity("aro"+std::to_string(num), "poly04.mesh");
+		entAro->setMaterialName("mat01");
+		nodoAro->attachObject(entAro);
+		nodoAro->setPosition(pos_x, pos_y, pos_z);
+		nodoAro->scale(5,5,5);
+		nodoAro->rotate(Quaternion(Degree(90), Vector3::UNIT_X));
+		_sceneManager->getRootSceneNode()->addChild(nodoAro);
+		return nodoAro;
+	}
+
 	void createScene() {
 	
 		//_sceneManager->setSkyBox(true, "SkyBox");
 		_sceneManager->setAmbientLight(Ogre::ColourValue(1.0f,1.0f,1.0f));
-		Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0.0);
+		_sceneManager->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_ADDITIVE);
+		_sceneManager->setSkyBox(true, "MySkyBox1");
+		
+		Ogre::Light* light = _sceneManager->createLight("Light01");
+		light->setType(Ogre::Light::LT_DIRECTIONAL);
+		light->setDiffuseColour(0.0f, 1.0f, 1.0f);
+		light->setSpecularColour(0.0f, 1.0f, 1.0f);
+		light->setDirection(Vector3(0,-1,-1));
+
+		/*Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0.0);
 		Ogre::MeshManager::getSingleton().createPlane("plane", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, plane, 20000, 90000, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Z);
 		Ogre::Entity* entPlano = _sceneManager->createEntity("PlanoEntity", "plane");
 		_sceneManager->getRootSceneNode()->createChildSceneNode()->attachObject(entPlano);
-		entPlano->setMaterialName("mat01");
+		entPlano->setMaterialName("mat01");*/
 
 		//Creando camara
 		camera_node = _sceneManager->createSceneNode("Camera");
 		camera_node->attachObject(camera);
-		camera_node->setPosition(0,0,45000);
+		camera_node->setPosition(0,0,0);
 		_sceneManager->getRootSceneNode()->addChild(camera_node);
 
 		//Creando nave
@@ -300,6 +419,35 @@ public:
 		Ogre::Entity* naveMesh = _sceneManager->createEntity("nav","poly05.mesh");
 		naveMesh->setMaterialName("mat02");
 		nave->attachObject(naveMesh);
+
+		ParticleSystem* particulas_nave = _sceneManager->createParticleSystem("Nave", "ParticulasNave");
+		camera_node->attachObject(particulas_nave);
+
+
+		met = _sceneManager->createSceneNode("Met01");
+		Ogre::Entity* entMet = _sceneManager->createEntity("Met01", "poly18.mesh");
+		entMet->setMaterialName("mat01");
+		met->attachObject(entMet);
+		met->setPosition(0,2000,10000);
+		met->scale(7,7,7);
+		met->rotate(Quaternion(Degree(45), Vector3::UNIT_Z));
+		_sceneManager->getRootSceneNode()->addChild(met);
+
+		ParticleSystem* particulas_met = _sceneManager->createParticleSystem("Smoke", "Examples/Smoke");
+		met->createChildSceneNode("ParticulasMet")->attachObject(particulas_met);
+
+		FrameListenerMet01 = new FrameListenerMet(met);
+		_root->addFrameListener(FrameListenerMet01);
+
+		// Creamos los aros y las monedas de manera aleatoria
+		for (int i = 0; i < sizeof(aros); i++)
+		{
+			aros[i] = createRing((rand() % 180)*100 - 10000,  (rand() % 80)*100 + 1000, (rand() % 870)*100 - 43000, i);
+		}
+		for (int i = 0; i < sizeof(monedas); i++)
+		{
+			monedas[i] = createCoin((rand() % 180)*100 - 10000,  (rand() % 80)*100 + 1000, (rand() % 870)*100 - 43000, i);
+		}
 		 //Luz
 		//float lightScale = 0.9f;
 		//Ogre::Light* light02;
@@ -332,14 +480,14 @@ public:
 		nM03->attachObject(entM03);
 		nM03->scale(1.0f,1.0f,1.0f);
 		entM03->setMaterialName("MyMaterialNave1");*/
-
+		std::cout << "Score:" << score << std::endl;
 	}
 
 };
 
 int main(void)
 {
-
+	srand(time(NULL));
 	OgreProyectos app;
 	app.startup();
 	return 0;

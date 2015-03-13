@@ -2,3 +2,4 @@
 #include "OIS\OIS.h"
 #include <iostream>
 #include <stdlib.h>
+#include <time.h>

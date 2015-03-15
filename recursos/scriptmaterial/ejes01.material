@@ -1,0 +1,57 @@
+material lambert2
+{
+	technique
+	{
+		pass
+		{
+			ambient 0 1 0 1
+		}
+
+	}
+
+}
+
+
+
+material lambert3
+{
+	technique
+	{
+		pass
+		{
+			ambient 1 0.2 0 1
+		}
+
+	}
+
+}
+
+
+
+material lambert4
+{
+	technique
+	{
+		pass
+		{
+			ambient 0 0 1 1
+		}
+
+	}
+
+}
+
+
+
+material lambert5
+{
+	technique
+	{
+		pass
+		{
+			diffuse 1 0.983333 0 1
+		}
+
+	}
+
+}

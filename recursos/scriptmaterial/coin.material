@@ -1,0 +1,9 @@
+material coin{
+	technique{
+		pass{
+			texture_unit{
+				texture modafokoin.png
+			}
+		}
+	}
+}

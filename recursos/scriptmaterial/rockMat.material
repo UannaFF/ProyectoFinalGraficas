@@ -1,0 +1,20 @@
+material rockMat{
+	technique{
+		pass{
+			texture_unit{
+				texture piedra.jpg
+			}
+		}
+	}
+}
+
+material extremMat{
+	technique{
+		pass{
+			texture_unit{
+				texture cabeza.jpg
+				scale 0.5 0.5
+			}
+		}
+	}
+}

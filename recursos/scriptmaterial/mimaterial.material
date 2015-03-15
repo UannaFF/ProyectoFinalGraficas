@@ -1,0 +1,103 @@
+material mat01
+{
+	technique
+	{
+		pass
+		{
+
+			//Que diferencia tiene el emmissice y el ambient.... el ambient depende del valor de setambientLIght en el cpp, el emisive si es independiente.
+			ambient 0.5 0.0 0.0 1.0
+			diffuse 0.0 0.0 1.0 1.0
+			specular 1.0 1.0 1.0 1.0
+			emissive 10.0 0.0 0.0 1.0
+			//polygon_form wireframe
+
+			texture_unit
+			{
+				texture BumpyMetal.jpg
+				scale 1 1
+				//rotate_anim 0.1
+			}
+		}
+	}
+}
+
+material mat02
+{
+	technique
+	{
+		pass
+		{
+			ambient 0.5 0.0 0.0 1.0
+			diffuse 0.0 0.0 1.0 1.0
+			specular 1.0 1.0 1.0 1.0
+
+			texture_unit
+			{
+				texture BumpyMetal.jpg
+				scale 0.01 0.01
+				rotate_anim 0.01
+			}
+		}
+	}
+}
+
+material aroTex
+{
+	technique
+	{
+		pass
+		{
+			ambient 0.5 0.5 0.5 1.0
+			//diffuse 0.0 0.0 1.0 1.0
+			specular 1.0 1.0 1.0 1.0
+
+			texture_unit
+			{
+				texture aro.jpg
+				//scale 0.01 0.01
+				rotate_anim 0.5
+			}
+		}
+	}
+}
+
+material redTex
+{
+	technique
+	{
+		pass
+		{
+			//ambient 0.5 0.5 0.5 1.0
+			//diffuse 0.0 0.0 1.0 1.0
+			//specular 1.0 1.0 1.0 1.0
+
+			texture_unit
+			{
+				texture fur.jpg
+				//scale 0.01 0.01
+				rotate_anim 0.5
+			}
+		}
+	}
+}
+
+material ballTex
+{
+	technique
+	{
+		pass
+		{
+			//ambient 0.5 0.5 0.5 1.0
+			//diffuse 0.0 0.0 1.0 1.0
+			//specular 1.0 1.0 1.0 1.0
+
+			texture_unit
+			{
+				texture rain.jpg
+				//scale 0.01 0.01
+				rotate_anim 0.5
+			}
+		}
+	}
+}

@@ -1,0 +1,16 @@
+material SkyBox
+{
+   technique
+   {
+      pass
+      {
+         lighting on
+         depth_write off
+         texture_unit
+         {
+            cubic_texture sky_apote01_hdrbk.vtf sky_apote01_hdrbk.vtf sky_apote01_hdrbk.vtf sky_apote01_hdrbk.vtf sky_apote01_hdrbk.vtf sky_apote01_hdrbk.vtf separateUV
+            tex_address_mode clamp
+         }
+      }
+   }
+}

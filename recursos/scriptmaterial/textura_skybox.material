@@ -1,0 +1,16 @@
+material MySkyBox1
+{
+   technique
+   {
+      pass
+      {
+         lighting on
+         depth_write off
+         texture_unit
+         {
+            cubic_texture fadeaway_back.jpg fadeaway_front.jpg fadeaway_right.jpg fadeaway_left.jpg fadeaway_top.jpg fadeaway_top.jpg separateUV
+            tex_address_mode clamp
+         }
+      }
+   }
+}
